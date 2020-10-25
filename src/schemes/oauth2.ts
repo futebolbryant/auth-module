@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid'
 import requrl from 'requrl'
-import { encodeQuery, parseQuery, normalizePath, getResponseProp, urlJoin, removeTokenPrefix } from '../utils'
+import { encodeQuery, getResponseProp, normalizePath, parseQuery, removeTokenPrefix, urlJoin } from '../utils'
 import RefreshController from '../inc/refresh-controller'
 import RequestHandler from '../inc/request-handler'
 import ExpiredAuthSessionError from '../inc/expired-auth-session-error'
@@ -42,13 +42,15 @@ const DEFAULTS = {
     prefix: '_refresh_token.',
     expirationPrefix: '_refresh_token_expiration.'
   },
+  user: {
+    property: false
+  },
   responseType: 'token',
   codeChallengeMethod: 'implicit'
 }
 
 export default class Oauth2Scheme extends BaseScheme<typeof DEFAULTS> {
   public req
-  public name
   public token: Token
   public refreshToken: RefreshToken
   public refreshController: RefreshController
@@ -279,11 +281,11 @@ export default class Oauth2Scheme extends BaseScheme<typeof DEFAULTS> {
       return
     }
 
-    const { data } = await this.$auth.requestWith(this.name, {
+    const response = await this.$auth.requestWith(this.name, {
       url: this.options.endpoints.userInfo
     })
 
-    this.$auth.setUser(data)
+    this.$auth.setUser(getResponseProp(response, this.options.user.property))
   }
 
   async _handleCallback () {
@@ -377,7 +379,7 @@ export default class Oauth2Scheme extends BaseScheme<typeof DEFAULTS> {
     // Delete current token from the request header before refreshing
     this.requestHandler.clearHeader()
 
-    const response = await this.$auth.request(this.name, {
+    const response = await this.$auth.request({
       method: 'post',
       url: this.options.endpoints.token,
       data: encodeQuery({

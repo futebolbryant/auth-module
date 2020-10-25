@@ -20,7 +20,7 @@ describe('e2e', () => {
     const port = await getPort()
     url = p => 'http://localhost:' + port + p
     await nuxt.listen(port)
-  })
+  }, 60000)
 
   afterAll(async () => {
     await browser.close()
@@ -31,6 +31,7 @@ describe('e2e', () => {
     const page = await browser.newPage()
     await page.goto(url('/'))
 
+    // @ts-ignore
     const state = await page.evaluate(() => window.__NUXT__.state)
     expect(state.auth).toEqual({ user: null, loggedIn: false, strategy: 'local' })
 
@@ -179,6 +180,7 @@ describe('e2e', () => {
     await page.goto(url('/'))
 
     const flag = await page.evaluate(() => {
+      // @ts-ignore
       return window.$nuxt.$auth._custom_plugin
     })
 
